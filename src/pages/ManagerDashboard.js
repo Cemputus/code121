@@ -1,10 +1,26 @@
-import React from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const ManagerDashboard = () => {
   const navigate = useNavigate();
+  const [totalChildren, setTotalChildren] = useState(0); // State for total children
+  const [loading, setLoading] = useState(true); // Loading state
 
   console.log('ManagerDashboard rendered');
+
+  // Fetch total children data from the API
+  useEffect(() => {
+    fetch('https://backend-esz3.onrender.com/api/babies/babies')
+      .then((response) => response.json())
+      .then((data) => {
+        setTotalChildren(data.length); // Set total children based on the length of the response
+        setLoading(false); // Set loading to false when the data is fetched
+      })
+      .catch((error) => {
+        console.error('Error fetching children:', error);
+        setLoading(false); // Set loading to false if an error occurs
+      });
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('isAuthenticated');
@@ -24,7 +40,7 @@ const ManagerDashboard = () => {
         </div>
 
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {/* Existing cards */}
+          {/* Total Children Card */}
           <div className="bg-white overflow-hidden shadow rounded-lg">
             <div className="p-6">
               <div className="flex items-center">
@@ -37,7 +53,9 @@ const ManagerDashboard = () => {
                   <dl>
                     <dt className="text-sm font-medium text-gray-500 truncate">Total Children</dt>
                     <dd className="flex items-baseline">
-                      <div className="text-2xl font-semibold text-gray-900">24</div>
+                      <div className="text-2xl font-semibold text-gray-900">
+                        {loading ? 'Loading...' : totalChildren} {/* Display loading or total children */}
+                      </div>
                     </dd>
                   </dl>
                 </div>
@@ -131,4 +149,4 @@ const ManagerDashboard = () => {
   );
 };
 
-export default ManagerDashboard; 
+export default ManagerDashboard;

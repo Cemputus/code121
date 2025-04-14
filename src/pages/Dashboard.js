@@ -1,8 +1,24 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const [totalChildren, setTotalChildren] = useState(0); // State for total children
+  const [loading, setLoading] = useState(true); // Loading state
+
+  // Fetch total children data from the API
+  useEffect(() => {
+    fetch('https://backend-esz3.onrender.com/api/babies/babies')
+      .then((response) => response.json())
+      .then((data) => {
+        setTotalChildren(data.length); // Set total children based on the length of the response
+        setLoading(false); // Set loading to false when the data is fetched
+      })
+      .catch((error) => {
+        console.error('Error fetching children:', error);
+        setLoading(false); // Set loading to false if an error occurs
+      });
+  }, []);
 
   const handleLogout = () => {
     // Clear authentication state
@@ -29,7 +45,9 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
           <div className="bg-white p-6 rounded-lg shadow">
             <h3 className="text-lg font-semibold text-gray-900">Total Children</h3>
-            <p className="text-3xl font-bold text-indigo-600">24</p>
+            <p className="text-3xl font-bold text-indigo-600">
+              {loading ? 'Loading...' : totalChildren} {/* Display loading or total children */}
+            </p>
           </div>
           <div className="bg-white p-6 rounded-lg shadow">
             <h3 className="text-lg font-semibold text-gray-900">Total Babysitters</h3>
@@ -81,4 +99,4 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard; 
+export default Dashboard;

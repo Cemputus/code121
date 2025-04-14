@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import axios from 'axios';
+import { toast } from 'react-toastify';
+import { useAuth } from '../contexts/AuthContext'; 
 
 const Login = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login } = useAuth(); 
   const [formData, setFormData] = useState({
     email: '',
-    password: '',
-    role: 'manager' // Default role
+    password: ''
   });
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const handleChange = (e) => {
@@ -20,103 +22,86 @@ const Login = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Login attempt with:', formData);
+    setError('');
+    setLoading(true);
 
-    // Manager credentials
-    if (formData.role === 'manager' && formData.email === 'peter123@gmail.com' && formData.password === 'Peter123') {
-      console.log('Manager login successful');
-      login(formData.email, 'manager');
-      navigate('/manager-dashboard', { replace: true });
-      return;
+    try {
+      const response = await axios.post('https://backend-esz3.onrender.com/api/users/login', {
+        email: formData.email.toLowerCase(),
+        password: formData.password
+      });
+
+      const { token, user } = response.data;
+
+      // ✅ Use context to store auth data
+      login(token, user);
+
+      toast.success('Login successful!');
+
+      // ✅ Redirect based on role
+      switch (user.role) {
+        case 'manager':
+          navigate('/manager-dashboard');
+          break;
+        case 'babysitter':
+          navigate('/babysitter-dashboard');
+          break;
+        default:
+          navigate('/');
+      }
+
+    } catch (err) {
+      const message = err.response?.data?.error || 'Login failed';
+      setError(message);
+      toast.error(message);
+    } finally {
+      setLoading(false);
     }
-
-    // Babysitter credentials
-    if (formData.role === 'babysitter' && formData.email === 'alice123@gmail.com' && formData.password === '#Alice') {
-      console.log('Babysitter login successful');
-      login(formData.email, 'babysitter');
-      navigate('/babysitter-dashboard', { replace: true });
-      return;
-    }
-
-    console.log('Login failed - invalid credentials');
-    setError(`Invalid ${formData.role} credentials`);
   };
 
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center">
       <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow-lg">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Sign in to your account
-          </h2>
-        </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="rounded-md shadow-sm space-y-4">
-            <div>
-              <label htmlFor="role" className="block text-sm font-medium text-gray-700">
-                Select Role
-              </label>
-              <select
-                id="role"
-                name="role"
-                value={formData.role}
-                onChange={handleChange}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              >
-                <option value="manager">Manager</option>
-                <option value="babysitter">Babysitter</option>
-              </select>
-            </div>
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email address
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                required
-                value={formData.email}
-                onChange={handleChange}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                value={formData.password}
-                onChange={handleChange}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              />
-            </div>
-          </div>
-
-          {error && (
-            <div className="text-red-500 text-sm text-center">
-              {error}
-            </div>
-          )}
-
+        <h2 className="text-2xl font-bold text-center">Sign In</h2>
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <button
-              type="submit"
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              Sign in
-            </button>
+            <label className="block text-sm font-medium text-gray-700">Email</label>
+            <input
+              type="email"
+              name="email"
+              required
+              value={formData.email}
+              onChange={handleChange}
+              className="mt-1 block w-full border border-gray-300 rounded-md p-2"
+            />
           </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Password</label>
+            <input
+              type="password"
+              name="password"
+              required
+              value={formData.password}
+              onChange={handleChange}
+              className="mt-1 block w-full border border-gray-300 rounded-md p-2"
+            />
+          </div>
+
+          {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition"
+          >
+            {loading ? 'Logging in...' : 'Login'}
+          </button>
         </form>
       </div>
     </div>
   );
 };
 
-export default Login; 
+export default Login;
